@@ -5,23 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poprtal</title>
     <link rel="stylesheet" href="errorpresent.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <main>
+    <header>
         <div class="heading">
-            <span>Welcome back</span>
-            <span>Please enter your details to login</span>
+            <span id="welcome">Welcome back</span>
+            <span id="details">Please enter your details to login</span>
         </div>
 
-        <div>
+        <div class="form">
             <form>
-                <span>Email</span> <br>
-                <input type="email" placeholder="hello@portal.com" >
+                <span>Name</span> 
+                <input type="text" placeholder="Enter name" id="name">
                 <div class="password">
                     <span>Password</span>
                     <a href=""> <span>Forgot password?</span> </a>
                 </div> 
-                <input type="password" >
+                <input type="password" id="password" >
                 <div class="remember">
                      <input type="checkbox" >
                      <span>Remember me</span>
@@ -31,11 +34,13 @@
 
             <button id="btn1">Login</button>
 
-            <div class="signin">
-                <span>Don't have an account?</span>
-                <a href="">Sign in</a>
-            </div>
+           
         </div>
-    </main>
+    </header>
+
+         <div class="signin">
+            <span>Don't have an account?</span>
+            <a href="">Sign in</a>
+        </div>
 </body>
 </html>
