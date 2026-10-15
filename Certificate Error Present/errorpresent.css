@@ -83,3 +83,8 @@ form{
     text-decoration: none;
     color: white;
 }
+
+.remember{
+    display: flex;
+    align-items: center;
+}
