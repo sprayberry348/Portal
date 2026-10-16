@@ -13,7 +13,34 @@
             text-decoration: none;
             color: white;
         }
+        main {
+            max-width: 760px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            font-family: Inter, sans-serif;
+        }
+        section {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        form {
+            display: grid;
+            gap: 0.6rem;
+            max-width: 420px;
+        }
+        input, button {
+            padding: 0.55rem;
+        }
+        #message {
+            min-height: 1.5rem;
+        }
+        #sessionPanel[hidden] {
+            display: none;
+        }
     </style>
+    <script src="certificate.js" defer></script>
 </head>
 <body style="margin: 0;">
     <nav style="display: flex; flex-direction: row; justify-content: space-around;
@@ -35,5 +62,63 @@
             </button>
         </div>
     </nav>
+    <main>
+        <h1>Certificate portal demo</h1>
+        <p>Choose a demo account, correct the stored name if needed, and try issuing or verifying a certificate.</p>
+
+        <section>
+            <h2>Log in</h2>
+            <p>Demo credentials: STU1001 / complete123 (100%); STU1002 / progress123 (40%).</p>
+            <form id="loginForm">
+                <label for="matricNumber">Matric number</label>
+                <input id="matricNumber" name="matricNumber" autocomplete="username" required>
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+                <button type="submit">Log in</button>
+            </form>
+        </section>
+
+        <p id="message" role="status" aria-live="polite"></p>
+
+        <div id="sessionPanel" hidden>
+            <section>
+                <h2>Signed-in student</h2>
+                <p id="studentDetails"></p>
+                <button id="logoutButton" type="button">Log out</button>
+            </section>
+
+            <section>
+                <h2>Edit your stored name</h2>
+                <form id="nameForm">
+                    <label for="newName">Correct name</label>
+                    <input id="newName" name="name" maxlength="120" required>
+                    <button type="submit">Save name</button>
+                </form>
+            </section>
+
+            <section>
+                <h2>Generate a certificate</h2>
+                <form id="certificateForm">
+                    <label for="certificateMatric">Matric number to put on the request</label>
+                    <input id="certificateMatric" name="studentMatric" required>
+                    <label for="certificateName">Name to put on the request</label>
+                    <input id="certificateName" name="name" maxlength="120" required>
+                    <button type="submit">Generate certificate</button>
+                </form>
+                <p>The vulnerable server trusts both request fields. The fixed server ignores them.</p>
+                <div id="certificateResult"></div>
+            </section>
+        </div>
+
+        <section>
+            <h2>Verify a certificate</h2>
+            <form id="verifyForm">
+                <label for="certificateId">Certificate ID</label>
+                <input id="certificateId" name="id" required>
+                <button type="submit">Verify</button>
+            </form>
+            <p id="verificationResult" role="status"></p>
+        </section>
+    </main>
 </body>
 </html>

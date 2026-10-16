@@ -1,0 +1,13 @@
+{
+  "name": "student-certificate-portal-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A student certificate portal demo with vulnerable and fixed Express servers",
+  "scripts": {
+    "start:vulnerable": "node server.vulnerable.js",
+    "start:fixed": "node server.fixed.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
