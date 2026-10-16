@@ -64,7 +64,7 @@ form{
     
 }
 
-#name, #password{
+#matricNumber, #password{
     height: 32px;
     width: 500px;
     border-radius: 10px;
