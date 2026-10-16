@@ -1,9 +1,7 @@
-const loginForm = document.querySelector("#loginForm");
 const sessionPanel = document.querySelector("#sessionPanel");
 const message = document.querySelector("#message");
 const studentDetails = document.querySelector("#studentDetails");
 const certificateResult = document.querySelector("#certificateResult");
-let token = "";
 let student = null;
 
 function showMessage(text) {
@@ -21,9 +19,9 @@ function updateStudent(nextStudent) {
 }
 
 async function request(url, options = {}) {
-    const headers = { "Content-Type": "application/json", ...options.headers };
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
+    const headers = { ...options.headers };
+    if (options.body) {
+        headers["Content-Type"] = "application/json";
     }
     const response = await fetch(url, { ...options, headers });
     const data = response.status === 204 ? {} : await response.json();
@@ -32,25 +30,6 @@ async function request(url, options = {}) {
     }
     return data;
 }
-
-loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const formData = new FormData(loginForm);
-    try {
-        const result = await request("/api/login", {
-            method: "POST",
-            body: JSON.stringify({
-                matricNumber: formData.get("matricNumber"),
-                password: formData.get("password")
-            })
-        });
-        token = result.token;
-        updateStudent(result.student);
-        showMessage("Logged in.");
-    } catch (error) {
-        showMessage(error.message);
-    }
-});
 
 document.querySelector("#nameForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -109,10 +88,16 @@ document.querySelector("#logoutButton").addEventListener("click", async () => {
         showMessage(error.message);
         return;
     }
-    token = "";
-    student = null;
-    sessionPanel.hidden = true;
-    loginForm.reset();
-    certificateResult.textContent = "";
-    showMessage("Logged out.");
+    window.location.assign("/errorpresent.html");
 });
+
+async function loadSession() {
+    try {
+        const result = await request("/api/session");
+        updateStudent(result.student);
+    } catch {
+        window.location.assign("/errorpresent.html");
+    }
+}
+
+loadSession();

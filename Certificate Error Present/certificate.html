@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificate</title>
+    <script src="portal.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -64,19 +65,7 @@
     </nav>
     <main>
         <h1>Certificate portal demo</h1>
-        <p>Choose a demo account, correct the stored name if needed, and try issuing or verifying a certificate.</p>
-
-        <section>
-            <h2>Log in</h2>
-            <p>Demo credentials: STU1001 / complete123 (100%); STU1002 / progress123 (40%).</p>
-            <form id="loginForm">
-                <label for="matricNumber">Matric number</label>
-                <input id="matricNumber" name="matricNumber" autocomplete="username" required>
-                <label for="password">Password</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required>
-                <button type="submit">Log in</button>
-            </form>
-        </section>
+        <p>Sign in through the portal login page to manage your certificates.</p>
 
         <p id="message" role="status" aria-live="polite"></p>
 

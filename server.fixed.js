@@ -3,7 +3,7 @@ const path = require("node:path");
 const express = require("express");
 
 const app = express();
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 5000);
 const students = new Map([
     ["STU1001", {
         matricNumber: "STU1001",
@@ -26,12 +26,47 @@ const sessions = new Map();
 const certificates = new Map();
 
 app.use(express.json());
+
+function getRequestToken(req) {
+    const authorization = req.get("authorization") || "";
+    const bearerMatch = authorization.match(/^Bearer ([a-f0-9]{64})$/);
+    if (bearerMatch) {
+        return bearerMatch[1];
+    }
+
+    const cookie = req.get("cookie") || "";
+    const cookieMatch = cookie.match(/(?:^|;\s*)portal_session=([a-f0-9]{64})(?:;|$)/);
+    return cookieMatch ? cookieMatch[1] : undefined;
+}
+
+function hasValidSession(req) {
+    const token = getRequestToken(req);
+    return Boolean(token && sessions.has(token));
+}
+
+// FIX: Protected pages and their local assets are served only with a valid login session.
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+        return next();
+    }
+    res.set("Cache-Control", "no-store");
+    if (req.path === "/" || ["/errorpresent.html", "/errorpresent.css", "/login.js"].includes(req.path)) {
+        return next();
+    }
+    if (hasValidSession(req)) {
+        return next();
+    }
+    if (req.accepts("html")) {
+        return res.redirect("/errorpresent.html");
+    }
+    return res.status(401).send("Please log in to access this resource.");
+});
+
 app.use(express.static(path.join(__dirname, "Certificate Error Present")));
 
 function getSessionStudent(req) {
-    const authorization = req.get("authorization") || "";
-    const match = authorization.match(/^Bearer ([a-f0-9]{64})$/);
-    const matricNumber = match ? sessions.get(match[1]) : undefined;
+    const token = getRequestToken(req);
+    const matricNumber = token ? sessions.get(token) : undefined;
     return matricNumber ? students.get(matricNumber) : undefined;
 }
 
@@ -54,6 +89,8 @@ app.post("/api/login", (req, res) => {
     // FIX: The unpredictable token is stored server-side and maps to the authenticated student.
     const token = crypto.randomBytes(32).toString("hex");
     sessions.set(token, student.matricNumber);
+    // FIX: The HTTP-only cookie lets the server gate HTML pages without exposing auth state to page scripts.
+    res.cookie("portal_session", token, { httpOnly: true, sameSite: "lax", path: "/" });
     res.json({
         token,
         student: {
@@ -65,12 +102,27 @@ app.post("/api/login", (req, res) => {
     });
 });
 
-app.post("/api/logout", (req, res) => {
-    const authorization = req.get("authorization") || "";
-    const match = authorization.match(/^Bearer ([a-f0-9]{64})$/);
-    if (match) {
-        sessions.delete(match[1]);
+app.get("/api/session", (req, res) => {
+    const student = getSessionStudent(req);
+    if (!student) {
+        return res.status(401).json({ error: "Please log in." });
     }
+    res.json({
+        student: {
+            matricNumber: student.matricNumber,
+            name: student.name,
+            progress: student.progress,
+            nameEdits: student.nameEdits
+        }
+    });
+});
+
+app.post("/api/logout", (req, res) => {
+    const token = getRequestToken(req);
+    if (token) {
+        sessions.delete(token);
+    }
+    res.clearCookie("portal_session", { httpOnly: true, sameSite: "lax", path: "/" });
     res.status(204).end();
 });
 
@@ -164,7 +216,7 @@ app.get("/api/verify/:id", (req, res) => {
     });
 });
 
-app.get("/", (req, res) => res.redirect("/certificate.html"));
+app.get("/", (req, res) => res.redirect(hasValidSession(req) ? "/home.html" : "/errorpresent.html"));
 
 app.listen(port, () => {
     console.log(`Fixed demo running at http://localhost:${port}`);
