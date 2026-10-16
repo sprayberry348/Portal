@@ -20,9 +20,46 @@ const students = new Map([
         nameEdits: 0
     }]
 ]);
+const sessions = new Map();
 const certificates = new Map();
 
 app.use(express.json());
+
+function getRequestToken(req) {
+    const authorization = req.get("authorization") || "";
+    const bearerMatch = authorization.match(/^Bearer ([a-f0-9]{64})$/);
+    if (bearerMatch) {
+        return bearerMatch[1];
+    }
+
+    const cookie = req.get("cookie") || "";
+    const cookieMatch = cookie.match(/(?:^|;\s*)portal_session=([a-f0-9]{64})(?:;|$)/);
+    return cookieMatch ? cookieMatch[1] : undefined;
+}
+
+function hasValidSession(req) {
+    const token = getRequestToken(req);
+    return Boolean(token && sessions.has(token));
+}
+
+// VULNERABILITY NOTE: This page gate only protects browser access; the vulnerable certificate API still trusts request-body identity.
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+        return next();
+    }
+    res.set("Cache-Control", "no-store");
+    if (req.path === "/" || ["/errorpresent.html", "/errorpresent.css", "/login.js"].includes(req.path)) {
+        return next();
+    }
+    if (hasValidSession(req)) {
+        return next();
+    }
+    if (req.accepts("html")) {
+        return res.redirect("/errorpresent.html");
+    }
+    return res.status(401).send("Please log in to access this resource.");
+});
+
 app.use(express.static(path.join(__dirname, "Certificate Error Present")));
 
 app.get("/api/demo-students", (req, res) => {
@@ -43,6 +80,9 @@ app.post("/api/login", (req, res) => {
 
     // VULNERABLE: This token is not associated with or required for later requests.
     const token = crypto.randomBytes(32).toString("hex");
+    // Store a session only for browser page access; the intentionally vulnerable API does not require it.
+    sessions.set(token, student.matricNumber);
+    res.cookie("portal_session", token, { httpOnly: true, sameSite: "lax", path: "/" });
     res.json({
         token,
         student: {
@@ -54,8 +94,30 @@ app.post("/api/login", (req, res) => {
     });
 });
 
+app.get("/api/session", (req, res) => {
+    const token = getRequestToken(req);
+    const matricNumber = token ? sessions.get(token) : undefined;
+    const student = matricNumber ? students.get(matricNumber) : undefined;
+    if (!student) {
+        return res.status(401).json({ error: "Please log in." });
+    }
+    res.json({
+        student: {
+            matricNumber: student.matricNumber,
+            name: student.name,
+            progress: student.progress,
+            nameEdits: student.nameEdits
+        }
+    });
+});
+
 app.post("/api/logout", (req, res) => {
-    // VULNERABLE: Logging out has no server-side effect because the issued token is never tracked.
+    // Clear the browser-page session; certificate API requests remain intentionally unauthenticated.
+    const token = getRequestToken(req);
+    if (token) {
+        sessions.delete(token);
+    }
+    res.clearCookie("portal_session", { httpOnly: true, sameSite: "lax", path: "/" });
     res.status(204).end();
 });
 
@@ -136,7 +198,7 @@ app.get("/api/verify/:id", (req, res) => {
     });
 });
 
-app.get("/", (req, res) => res.redirect("/certificate.html"));
+app.get("/", (req, res) => res.redirect(hasValidSession(req) ? "/home.html" : "/errorpresent.html"));
 
 app.listen(port, () => {
     console.log(`Vulnerable demo running at http://localhost:${port}`);
